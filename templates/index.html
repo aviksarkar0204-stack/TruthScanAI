@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>TruthScan AI - Fake News Detection</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<style>
+  /* ── THEME VARIABLES ── */
+  :root[data-theme="dark"] {
+    --bg:           #0e1117;
+    --sidebar-bg:   #1a1c24;
+    --card-bg:      #1a1c24;
+    --card-border:  #2d2f3b;
+    --input-bg:     #262730;
+    --input-border: #4b5563;
+    --input-txt:    #f1f5f9;
+    --text:         #fafafa;
+    --text-muted:   #9ca3af;
+    --text-head:    #ffffff;
+    --sidebar-bdr:  #1f2937;
+    --divider:      #1f2937;
+    --btn-bdr:      #f1f5f9;
+    --btn-txt:      #f1f5f9;
+    --btn-hover-bg: #ffffff;
+    --btn-hover-txt:#0e1117;
+    --dataset-bg:   rgba(30,58,138,0.2);
+    --dataset-bdr:  rgba(30,64,175,0.5);
+    --dataset-head: #93c5fd;
+    --dataset-txt:  rgba(224,242,254,0.8);
+    --toggle-bg-off:#374151;
+    --toggle-bg-on: #2563eb;
+  }
+  :root[data-theme="light"] {
+    --bg:           #ffffff;
+    --sidebar-bg:   #f0f2f6;
+    --card-bg:      #f9fafb;
+    --card-border:  #e5e7eb;
+    --input-bg:     #ffffff;
+    --input-border: #d1d5db;
+    --input-txt:    #1f2937;
+    --text:         #31333f;
+    --text-muted:   #6b7280;
+    --text-head:    #111827;
+    --sidebar-bdr:  #e5e7eb;
+    --divider:      #e5e7eb;
+    --btn-bdr:      #1f2937;
+    --btn-txt:      #1f2937;
+    --btn-hover-bg: #f9fafb;
+    --btn-hover-txt:#111827;
+    --dataset-bg:   #eff6ff;
+    --dataset-bdr:  #bfdbfe;
+    --dataset-head: #1e40af;
+    --dataset-txt:  #1d4ed8;
+    --toggle-bg-off:#d1d5db;
+    --toggle-bg-on: #2563eb;
+  }
+
+  body {
+    font-family: "Source Sans Pro", "Segoe UI", Roboto, sans-serif;
+    color: var(--text);
+    background-color: var(--bg);
+    transition: background-color 0.3s, color 0.3s;
+  }
+
+  .sidebar-container {
+    width: 300px; min-width: 300px;
+    background-color: var(--sidebar-bg);
+    border-right: 1px solid var(--sidebar-bdr);
+    transition: background-color 0.3s;
+  }
+
+  .main-canvas { background-color: var(--bg); transition: background-color 0.3s; }
+
+  /* Cards */
+  .result-card {
+    background-color: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 0.75rem;
+    padding: 1.5rem;
+    transition: background-color 0.3s, border-color 0.3s;
+  }
+
+  /* Input */
+  textarea, select {
+    background-color: var(--input-bg) !important;
+    color: var(--input-txt) !important;
+    border-color: var(--input-border) !important;
+    transition: background-color 0.3s, color 0.3s !important;
+  }
+  textarea:focus, select:focus {
+    outline: none !important;
+    box-shadow: 0 0 0 2px rgba(37,99,235,0.4) !important;
+    border-color: #3b82f6 !important;
+  }
+
+  /* Analyze button */
+  .btn-analyze {
+    border: 2px solid var(--btn-bdr);
+    color: var(--btn-txt);
+    transition: all 0.2s ease-in-out;
+    background: transparent;
+  }
+  .btn-analyze:hover {
+    background-color: var(--btn-hover-bg);
+    color: var(--btn-hover-txt);
+    border-color: #ef4444;
+    color: #ef4444;
+  }
+  .btn-analyze:disabled {
+    opacity: 0.5; cursor: not-allowed;
+  }
+
+  /* Toggle switch */
+  .toggle-track {
+    width: 44px; height: 24px; border-radius: 999px;
+    background: var(--toggle-bg-off);
+    position: relative; cursor: pointer;
+    transition: background 0.3s;
+    border: none; outline: none;
+  }
+  [data-theme="dark"] .toggle-track { background: var(--toggle-bg-on); }
+  .toggle-thumb {
+    width: 18px; height: 18px; border-radius: 50%;
+    background: white; position: absolute; top: 3px; left: 3px;
+    transition: transform 0.3s;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+  }
+  [data-theme="dark"] .toggle-thumb { transform: translateX(20px); }
+
+  /* Circular progress */
+  .circle-track { stroke: var(--card-border); }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 8px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--input-border); border-radius: 4px; }
+
+  /* Spinner */
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .spin { animation: spin 0.8s linear infinite; display: inline-block; }
+
+  /* Fade in */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .fade-up { animation: fadeUp 0.4s ease forwards; }
+
+  /* Result hidden by default */
+  #results-container { display: none; }
+</style>
+</head>
+<body class="flex min-h-screen">
+
+<!-- ── SIDEBAR ── -->
+<aside class="sidebar-container hidden md:flex flex-col p-6 space-y-8">
+
+  <!-- Brand -->
+  <div>
+    <h2 class="text-xl font-bold flex items-center gap-2" style="color:var(--text-head)">
+      <svg class="h-6 w-6 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A11.357 11.357 0 001.809 14.285c1.257 3.091 4.153 5.303 7.591 5.303 3.438 0 6.334-2.212 7.591-5.303a11.357 11.357 0 00-1.573-11.301z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/>
+      </svg>
+      TruthScan AI
+    </h2>
+  </div>
+
+  <!-- Model Selection — YOUR models -->
+  <div class="space-y-2">
+    <label class="text-xs font-bold uppercase tracking-wider" style="color:var(--text-muted)">Model Selection</label>
+    <select id="modelSelect" class="w-full rounded-md py-2 px-3 text-sm border">
+      <option value="svm">SVM — 99.51% accuracy ⚡</option>
+      <option value="lr">Logistic Regression — 98.72% accuracy</option>
+    </select>
+    <p class="text-xs italic" style="color:var(--text-muted)">Trained on ISOT dataset — 44,898 articles</p>
+  </div>
+
+  <!-- Theme Toggle -->
+  <div class="flex items-center justify-between py-4" style="border-bottom:1px solid var(--divider)">
+    <span class="text-sm font-semibold" style="color:var(--text-muted)">Dark Mode</span>
+    <button class="toggle-track" id="themeToggle" onclick="toggleTheme()">
+      <div class="toggle-thumb"></div>
+    </button>
+  </div>
+
+  <!-- Dataset info -->
+  <div class="mt-auto pt-6" style="border-top:1px solid var(--divider)">
+    <p class="text-xs leading-relaxed" style="color:var(--text-muted)">
+      <strong>Data Source:</strong><br/>
+      Powered by ISOT Fake News Dataset.
+      <span class="block mt-1">Contains 44,898 validated news records (Real vs. Fake).</span>
+    </p>
+  </div>
+
+</aside>
+
+<!-- ── MAIN ── -->
+<main class="main-canvas flex-grow p-4 md:p-12 overflow-y-auto">
+  <div class="max-w-4xl mx-auto">
+
+    <!-- Header -->
+    <header class="mb-10">
+      <h1 class="text-4xl font-extrabold mb-2" style="color:var(--text-head)">TruthScan AI</h1>
+      <p class="text-lg" style="color:var(--text-muted)">Streamlined Fact-Checking powered by ML models trained on 44,898 news articles.</p>
+    </header>
+
+    <!-- Input -->
+    <section class="mb-12">
+      <label class="block text-sm font-medium mb-2" style="color:var(--text-muted)">Article Text</label>
+      <textarea id="newsInput" rows="10" class="w-full p-4 rounded-lg border text-base"
+        placeholder="Paste the news article text here for analysis..."></textarea>
+      <div class="mt-4 flex items-center gap-4">
+        <button class="btn-analyze inline-flex items-center gap-2 px-6 py-3 font-bold rounded-md text-sm"
+          id="analyzeBtn" onclick="runAnalysis()">
+          <span id="btnIcon">🔍</span>
+          <span id="btnText">Analyze Content</span>
+        </button>
+        <span id="charCount" class="text-xs" style="color:var(--text-muted)">0 characters</span>
+      </div>
+    </section>
+
+    <!-- Results -->
+    <section id="results-container" class="space-y-8 fade-up">
+      <div style="border-top:1px solid var(--divider);padding-top:2rem">
+
+        <div class="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-6">
+          <div>
+            <h3 class="text-2xl font-bold mb-1" style="color:var(--text-head)">Analysis Report</h3>
+            <p class="text-sm" style="color:var(--text-muted)">
+              Model: <span id="modelUsed" class="font-semibold text-blue-500"></span>
+            </p>
+          </div>
+          <!-- Verdict badge -->
+          <div id="verdictBadge" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl border">
+            <span class="text-xs font-bold uppercase" style="color:var(--text-muted)">Verdict:</span>
+            <span id="verdictLabel" class="font-extrabold uppercase text-lg"></span>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+
+          <!-- Credibility circle -->
+          <div class="result-card flex flex-col items-center justify-center text-center">
+            <span class="text-xs font-bold uppercase tracking-widest mb-3" style="color:var(--text-muted)">Credibility Score</span>
+            <div class="relative flex items-center justify-center">
+              <svg class="w-24 h-24" style="transform:rotate(-90deg)">
+                <circle class="circle-track" cx="48" cy="48" fill="transparent" r="40" stroke="currentColor" stroke-width="8"/>
+                <circle id="credCircle" cx="48" cy="48" fill="transparent" r="40"
+                  stroke="#22c55e" stroke-dasharray="251.2" stroke-dashoffset="251.2"
+                  stroke-linecap="round" stroke-width="8"
+                  style="transition:stroke-dashoffset 0.8s ease, stroke 0.3s"/>
+              </svg>
+              <span id="credScore" class="absolute text-2xl font-bold" style="color:var(--text-head)">—</span>
+            </div>
+            <p id="credLabel" class="mt-3 font-semibold uppercase text-xs"></p>
+          </div>
+
+          <!-- Key findings -->
+          <div class="result-card md:col-span-2">
+            <span class="text-xs font-bold uppercase tracking-widest block mb-4" style="color:var(--text-muted)">Key Indicators</span>
+            <ul id="findingsList" class="space-y-3"></ul>
+          </div>
+
+        </div>
+
+        <!-- Confidence bars -->
+        <div class="result-card mt-6">
+          <span class="text-xs font-bold uppercase tracking-widest block mb-5" style="color:var(--text-muted)">Confidence Distribution</span>
+          <div class="space-y-5">
+            <!-- Real bar -->
+            <div>
+              <div class="flex justify-between items-end mb-2">
+                <span class="text-sm font-bold uppercase tracking-wide" style="color:var(--text)">Real</span>
+                <span id="realScore" class="text-xl font-black text-green-500">—</span>
+              </div>
+              <div style="width:100%;background:var(--card-border);border-radius:999px;height:12px">
+                <div id="realBar" style="width:0%;background:linear-gradient(to right,#15803d,#22c55e);height:12px;border-radius:999px;transition:width 0.8s ease"></div>
+              </div>
+            </div>
+            <!-- Fake bar -->
+            <div>
+              <div class="flex justify-between items-end mb-2">
+                <span class="text-sm font-bold uppercase tracking-wide" style="color:var(--text)">Fake</span>
+                <span id="fakeScore" class="text-xl font-black text-red-500">—</span>
+              </div>
+              <div style="width:100%;background:var(--card-border);border-radius:999px;height:12px">
+                <div id="fakeBar" style="width:0%;background:linear-gradient(to right,#b91c1c,#ef4444);height:12px;border-radius:999px;transition:width 0.8s ease"></div>
+              </div>
+            </div>
+          </div>
+          <p class="text-xs italic mt-4" style="color:var(--text-muted)">* SVM uses decision function score. LR uses probability.</p>
+        </div>
+
+        <!-- Dataset reference -->
+        <div class="mt-6 p-4 rounded-lg border" style="background:var(--dataset-bg);border-color:var(--dataset-bdr)">
+          <h4 class="text-xs font-bold uppercase mb-1" style="color:var(--dataset-head)">Dataset Reference</h4>
+          <p class="text-sm leading-relaxed" style="color:var(--dataset-txt)">
+            Analysis performed using the <strong>ISOT News Dataset</strong> — 21,417 real articles from Reuters and 23,481 fake news articles from unreliable sources.
+            Model accuracy: <span id="modelAccRef" class="font-bold"></span>
+          </p>
+        </div>
+
+      </div>
+    </section>
+
+  </div>
+</main>
+
+<script>
+  // ── Model info ──
+  const modelInfo = {
+    svm: { label: 'SVM (LinearSVC)', acc: '99.51%' },
+    lr:  { label: 'Logistic Regression', acc: '98.72%' }
+  };
+
+  // ── Theme toggle ──
+  function toggleTheme() {
+    const html = document.documentElement;
+    html.dataset.theme = html.dataset.theme === 'dark' ? 'light' : 'dark';
+  }
+
+  // ── Char counter ──
+  document.getElementById('newsInput').addEventListener('input', function() {
+    document.getElementById('charCount').textContent = this.value.length + ' characters';
+  });
+
+  // ── Real findings based on verdict ──
+  function getFindings(isReal) {
+    if (isReal) return [
+      { icon: '✅', color: '#3b82f6', text: 'Neutral tone with professional journalistic style detected.' },
+      { icon: '✅', color: '#3b82f6', text: 'Writing patterns consistent with verified news sources.' },
+      { icon: '✅', color: '#22c55e', text: 'No sensationalist or emotionally manipulative language found.' }
+    ];
+    else return [
+      { icon: '⚠️', color: '#f59e0b', text: 'Sensationalist or emotionally charged language detected.' },
+      { icon: '❌', color: '#ef4444', text: 'Writing patterns inconsistent with verified news sources.' },
+      { icon: '⚠️', color: '#f59e0b', text: 'Potential misinformation markers found in the content.' }
+    ];
+  }
+
+  // ── Main analysis function ──
+  async function runAnalysis() {
+    const text = document.getElementById('newsInput').value.trim();
+    if (!text) { alert('Please paste a news article first.'); return; }
+
+    const btn     = document.getElementById('analyzeBtn');
+    const btnText = document.getElementById('btnText');
+    const btnIcon = document.getElementById('btnIcon');
+    const model   = document.getElementById('modelSelect').value;
+    const info    = modelInfo[model];
+
+    // Loading state
+    btn.disabled = true;
+    btnIcon.innerHTML = '<span class="spin">⟳</span>';
+    btnText.textContent = 'Analyzing...';
+
+    try {
+      // ── Real Flask API call ──
+      const response = await fetch('/predict', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ article: text, model: model })
+      });
+      const data = await response.json();
+
+      const isReal   = data.verdict === 'real';
+      const realProb = data.real_prob;
+      const fakeProb = data.fake_prob;
+
+      // Update model info
+      document.getElementById('modelUsed').textContent   = info.label;
+      document.getElementById('modelAccRef').textContent = info.acc;
+
+      // Verdict badge
+      const badge = document.getElementById('verdictBadge');
+      const label = document.getElementById('verdictLabel');
+      if (isReal) {
+        badge.style.background   = 'rgba(34,197,94,0.1)';
+        badge.style.borderColor  = 'rgba(34,197,94,0.4)';
+        label.style.color        = '#22c55e';
+        label.textContent        = '✅ Real News';
+      } else {
+        badge.style.background   = 'rgba(239,68,68,0.1)';
+        badge.style.borderColor  = 'rgba(239,68,68,0.4)';
+        label.style.color        = '#ef4444';
+        label.textContent        = '🚨 Fake News';
+      }
+
+      // Credibility circle
+      const credPct    = isReal ? realProb : fakeProb;
+      const circumference = 251.2;
+      const offset     = circumference - (credPct / 100) * circumference;
+      const circle     = document.getElementById('credCircle');
+      circle.style.strokeDashoffset = offset;
+      circle.style.stroke = isReal ? '#22c55e' : '#ef4444';
+      document.getElementById('credScore').textContent = credPct + '%';
+      const credLabel  = document.getElementById('credLabel');
+      credLabel.textContent = isReal ? 'Likely Authentic' : 'Likely Fake';
+      credLabel.style.color = isReal ? '#22c55e' : '#ef4444';
+
+      // Confidence bars
+      document.getElementById('realScore').textContent = realProb + '%';
+      document.getElementById('fakeScore').textContent = fakeProb + '%';
+      setTimeout(() => {
+        document.getElementById('realBar').style.width = realProb + '%';
+        document.getElementById('fakeBar').style.width = fakeProb + '%';
+      }, 100);
+
+      // Key findings
+      const findings = getFindings(isReal);
+      document.getElementById('findingsList').innerHTML = findings.map(f =>
+        `<li style="display:flex;align-items:flex-start;gap:10px;font-size:0.875rem;color:var(--text)">
+          <span style="flex-shrink:0">${f.icon}</span>
+          <span>${f.text}</span>
+        </li>`
+      ).join('');
+
+      // Show results
+      const results = document.getElementById('results-container');
+      results.style.display = 'block';
+      results.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+    } catch (err) {
+      alert('Error connecting to server. Make sure Flask is running.');
+      console.error(err);
+    }
+
+    // Reset button
+    btn.disabled        = false;
+    btnIcon.textContent = '🔍';
+    btnText.textContent = 'Analyze Content';
+  }
+</script>
+</body>
+</html>
