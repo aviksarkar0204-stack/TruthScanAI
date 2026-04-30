@@ -52,7 +52,7 @@ instance/
 
 # Data files
 *.csv
-*.pkl
+
 
 # OS
 .DS_Store
