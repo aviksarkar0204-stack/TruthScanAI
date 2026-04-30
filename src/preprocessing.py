@@ -34,3 +34,10 @@ def preprocessing(text):
     text = remove_stopwords(text)
     text = steming(text)
     return list_to_string(text)
+
+def dl_preprocessing(text):
+    text = text.lower()
+    text = re.sub('<.*?>', ' ', text)
+    text = re.sub('[^a-zA-Z]', ' ', text)
+    text = re.sub(r'\s+', ' ', text).strip()
+    return text.split()
