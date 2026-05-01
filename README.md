@@ -22,7 +22,10 @@ FakeGuard is a fake news detector that classifies news articles as **Real** or *
 | WELFake retraining | 🔄 In Progress |
 | BERT fine-tuning | 📅 Planned |
 
-**Current known limitation:** All three models were trained on ISOT dataset (Reuters real news only). Real news from other sources (BBC, Guardian, etc.) may be incorrectly flagged as fake. See [REPORT.md](REPORT.md) for full analysis.
+**Current known limitation:** All three models were trained on ISOT dataset (Reuters real news only). Real news from other sources (BBC, Guardian, etc.) may be incorrectly flagged as fake. See [REPORT.md](Report.md) for full analysis.
+
+- Benchmark accuracy does not guarantee real-world generalization — a 99.81% LSTM failed on a real BBC article while 99.51% SVM performed better
+- Importance of training data diversity — Reuters-only real news creates a brittle model
 
 > Retraining on WELFake combined dataset (72,134 articles) is underway to improve generalization.
 
