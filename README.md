@@ -10,6 +10,23 @@ FakeGuard is a fake news detector that classifies news articles as **Real** or *
 
 ---
 
+## 🚧 Under Construction
+
+> **LSTM model integration and retraining in progress.**
+
+| Component | Status |
+|---|---|
+| SVM (LinearSVC) | ✅ Deployed |
+| Logistic Regression | ✅ Deployed |
+| LSTM + Word Embeddings | ✅ Added to app |
+| WELFake retraining | 🔄 In Progress |
+| BERT fine-tuning | 📅 Planned |
+
+**Current known limitation:** All three models were trained on ISOT dataset (Reuters real news only). Real news from other sources (BBC, Guardian, etc.) may be incorrectly flagged as fake. See [REPORT.md](REPORT.md) for full analysis.
+
+> Retraining on WELFake combined dataset (72,134 articles) is underway to improve generalization.
+
+---
 ## Demo
 
 [![Hugging Face Spaces](https://img.shields.io/badge/🤗%20Hugging%20Face-Spaces-yellow)](https://huggingface.co/spaces/Avik128/TruthScanAI)
