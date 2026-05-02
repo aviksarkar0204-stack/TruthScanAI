@@ -10,6 +10,8 @@ app = Flask(__name__)
 # ── Load classical ML models ──
 svm_model = joblib.load('models/svm.pkl')
 lr_model = joblib.load('models/logistic_regression.pkl')
+svm_retrained = joblib.load('models/svm_retrained.pkl')
+lr_retrained = joblib.load('models/lr_retrained.pkl')
 
 # ── Load vocabulary ──
 with open('models/word2idx.pkl', 'rb') as f:
@@ -84,8 +86,12 @@ def predict():
         # Classical ML preprocessing
         if model == 'svm':
             selected_model = svm_model
-        else:
+        elif model == 'lr':
             selected_model = lr_model
+        elif model == 'svm_retrained':
+            selected_model = svm_retrained
+        elif model == 'lr_retrained':
+            selected_model = lr_retrained
 
         cleaned = preprocessing(article)
         prediction = selected_model.predict([cleaned])[0]
