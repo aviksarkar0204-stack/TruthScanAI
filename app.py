@@ -97,7 +97,7 @@ def predict():
         prediction = selected_model.predict([cleaned])[0]
         is_positive = (prediction == 1)
 
-        if model == 'svm':
+        if model == 'svm' or model == 'svm_retrained':
             score = selected_model.decision_function([cleaned])[0]
             real_prob = min(max(int((score + 2) / 4 * 100), 0), 100)
         else:
