@@ -167,15 +167,23 @@
   </div>
 
   <!-- Model Selection — YOUR models -->
-  <div class="space-y-2">
-    <label class="text-xs font-bold uppercase tracking-wider" style="color:var(--text-muted)">Model Selection</label>
-    <select id="modelSelect" class="w-full rounded-md py-2 px-3 text-sm border">
-        <option value="svm">SVM — 99.51% accuracy ⚡</option>
-        <option value="lr">Logistic Regression — 98.72% accuracy</option>
-        <option value="lstm">LSTM + Embeddings — 99.81% accuracy 🧠</option>
-    </select>
-    <p class="text-xs italic" style="color:var(--text-muted)">Trained on ISOT dataset — 44,898 articles</p>
-  </div>
+    <div class="space-y-2">
+  <label class="text-xs font-bold uppercase tracking-wider" style="color:var(--text-muted)">Model Selection</label>
+  <select id="modelSelect" class="w-full rounded-md py-2 px-3 text-sm border">
+      <optgroup label="── Classical ML (ISOT only) ──">
+          <option value="svm">SVM — 99.51% ⚡</option>
+          <option value="lr">Logistic Regression — 98.72%</option>
+      </optgroup>
+      <optgroup label="── Retrained (ISOT + WELFake) ──">
+          <option value="svm_retrained">SVM Retrained — 97.38% 🔄</option>
+          <option value="lr_retrained">LR Retrained — 96.25% 🔄</option>
+      </optgroup>
+      <optgroup label="── Deep Learning ──">
+          <option value="lstm">LSTM + Embeddings — 99.81% 🧠</option>
+      </optgroup>
+  </select>
+  <p class="text-xs italic" style="color:var(--text-muted)">ISOT (44,898) + WELFake (72,134) articles</p>
+</div>
 
   <!-- Theme Toggle -->
   <div class="flex items-center justify-between py-4" style="border-bottom:1px solid var(--divider)">
@@ -311,9 +319,11 @@
 <script>
   // ── Model info ──
   const modelInfo = {
-    svm:  { label: 'SVM (LinearSVC)',        acc: '99.51%' },
-    lr:   { label: 'Logistic Regression',    acc: '98.72%' },
-    lstm: { label: 'LSTM + Word Embeddings', acc: '99.81%' }
+    svm:          { label: 'SVM (ISOT only)',              acc: '99.51%' },
+    lr:           { label: 'Logistic Regression (ISOT only)', acc: '98.72%' },
+    svm_retrained:{ label: 'SVM Retrained (ISOT + WELFake)', acc: '97.38%' },
+    lr_retrained: { label: 'LR Retrained (ISOT + WELFake)',  acc: '96.25%' },
+    lstm:         { label: 'LSTM + Word Embeddings',       acc: '99.81%' }
 };
 
   // ── Theme toggle ──
